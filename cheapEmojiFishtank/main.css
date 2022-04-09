@@ -1,0 +1,39 @@
+#app {
+    background-color: black;
+    background-image: url(waterbg.jpg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    min-height: 100vh;
+    margin: 0;
+    color: ivory;
+    display: grid;
+    flex-direction: column;
+    place-items: center;
+    font-size: 3vmin;
+}
+
+#fishbox {
+    position: relative;
+    display: grid;
+    place-content: center;
+    width: 60vmin;
+    height: 60vmin;
+    background-color: blue;
+    border: solid 2px white;
+}
+
+#fishbox::after {
+    position: absolute;
+    bottom: -2em;
+    left: 0;
+    right: 0;
+    text-align: center;
+    content: "11:11:11 make 11 fish";
+}
+
+.fish {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+}
