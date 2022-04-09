@@ -49,7 +49,7 @@
                     radius: Math.floor(Math.random() * 100),
                     velX: 0,
                     velY: 0,
-                    color: colors[Math.floor(Math.random) * colors.length],
+                    color: colors[Math.floor(Math.random() * colors.length)],
                     draw: function(context) {
                         context.beginPath();
                         context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
@@ -137,6 +137,10 @@
                 b.draw(context)
             })
 
+            food.forEach(function(f) {
+                f.draw(context)
+            })
+
             context.font = '50px serif';
             context.fillText('🍆', 10, 60);
 
@@ -162,7 +166,7 @@
                 color: 'brown',
                 radius: 5,
                 isSafe: isSafe,
-                draw: function() {
+                draw: function(context) {
                     context.beginPath();
                     context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
                     context.closePath();
