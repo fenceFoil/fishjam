@@ -24,7 +24,7 @@
             display: grid;
             flex-direction: column;
             place-items: center;
-            font-size: 
+            font-size: 3vmin;
         }
 
         #fishbox {
@@ -51,10 +51,11 @@
 
 <body>
     <div id="app" x-data="d">
-        <!-- 🐟 🎣🐠🐡🦈🐳💧🌿🦑🐙⛵🐚🦐 -->
-        <div id="fishbox">
+        <!-- 🐟 🎣🐠🐡🦈🐳💧🌿🦑🐙⛵🐚🦐🦀🦞 -->
+        poop
+        <canvas id="fishbox">
             🐟
-        </div>
+        </canvas>
     </div>
     <script src="fitty.min.js"></script>
     <script src="alpine.3.9.6.min.js" defer></script>
@@ -68,9 +69,41 @@
                 async init() {
                     fish: [],
 
-                    function init() {
-                        new Array(11).forEach(() => {
+                    function chooseEmoji() {
+                            return chance.weighted([
+                                '🐟',
+                                '🐠',
+                                '🐡',
+                                '🦈',
+                                '🐳',
+                                '🌿',
+                                '🦑',
+                                '🐙',
+                                '🐚',
+                                '🦐',
+                            ], [
+                                100,
+                                50,
+                                20,
+                                10,
+                                10,
+                                30,
+                                3,
+                                3,
+                                5,
+                                25,
+                            ]);
+                        },
 
+                    function init() {
+                        new Array(111).forEach(() => {
+                            let newFish = {
+                                x: 0.5,
+                                y: 0.5,
+                                scale: 1,
+                            }
+                            newFish.icon = this.chooseEmoji();
+                            fish.push(newFish);
                         });
                     }
                 }

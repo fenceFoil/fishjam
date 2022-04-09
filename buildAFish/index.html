@@ -10,64 +10,215 @@
     <title>Cthulhu Fish</title>
 
     <noscript>Hello Ryan! Behold the fallback fish: 🐟</noscript>
- 
+    <link rel="stylesheet" href="styles/main.css">
     <style>
-        #app {
-            background-color: black;
-            background-image: url(waterbg.jpg);
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: cover;
-            min-height: 100vh;
-            margin: 0;
-            color: ivory;
-            display: grid;
-            flex-direction: column;
-            place-items: center;
-            font-size: larger;
-        }
-
-        #fishbox {
-            position: relative;
-            display: grid;
-            place-content: center;
-            width: 60vmin;
-            height: 60vmin;
-            background-color: blue;
-            border: solid 2px white;
-        }
-
-        #fishbox::after {
-            position: absolute;
-            bottom: -2em;
-            left: 0;
-            right: 0;
-            text-align: center;
-            content: "12:12 make an eldrich";
-        }
-
+        
     </style>
 </head>
-
 <body>
-    <div id="app" x-data="d">
+    <div id="app">
         <!-- 🐟 🎣🐠🐡🦈🐳💧🌿🦑🐙 -->
-        <div id="fishbox">
-            🐟
-        </div>
+        <canvas id="fishbox" width="500" height="500" tabindex='0'></canvas>
     </div>
-    <script src="fitty.min.js"></script>
-    <script src="alpine.3.9.6.min.js" defer></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
     <script>
-        //fitty('.facecard .name');
-    </script>
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('d', () => ({
-                async init() {
+        
+        $(document).ready(function() {
+            var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+            window.requestAnimationFrame = requestAnimationFrame;
+            var canvas = document.getElementById("fishbox");
+            var context = canvas.getContext("2d");
+            console.log("Game started...")
+            loop();
+        })
+        
+
+        var curKeyPress = {};
+
+        var balls = []
+        var numBalls = 10
+
+        var colors = ['blue', 'green', 'yellow', 'black', 'red', 'purple', 'pink']
+
+        for(let i = 0; i < numBalls; i=1+i) {
+            balls.push(
+                {
+                    x: Math.floor(Math.random() * 500),
+                    y: Math.floor(Math.random() * 500),
+                    radius: Math.floor(Math.random() * 100),
+                    velX: 0,
+                    velY: 0,
+                    color: colors[Math.floor(Math.random) * colors.length],
+                    draw: function(context) {
+                        console.log("Drawing my balls lol XD");
+                        context.beginPath();
+                        context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+                        context.closePath();
+                        context.fillStyle = this.color;
+                        context.fill();
+                    }
                 }
-            }));
-        });
+            )
+        }
+        
+    
+        
+        var ball = {
+            x: 50,
+            y: 50,
+            radius: 20,
+            velX: 0,
+            velY: 0,
+            color: 'green',
+            draw: function(context) {
+                context.beginPath();
+                context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+                context.closePath();
+                context.fillStyle = this.color;
+                context.fill();
+            }
+        }
+
+
+        $(document).on('keydown', function(e) {
+            curKey = String.fromCharCode(e.which)
+            curKeyPress[curKey.toLowerCase()] = true;
+        })
+
+        $(document).on("keyup", function(e) {
+            curKey = String.fromCharCode(e.which)
+            curKeyPress[curKey.toLowerCase()] = false;
+        })
+
+        function updateKeyStatus() {
+            if(curKeyPress['w']){
+                ball.velY = -0.5;
+            }
+            else if(curKeyPress['s']) {
+                ball.velY = 0.5;
+            }
+            else {
+                ball.velY = 0;
+            }
+            if(curKeyPress['a']) {
+                ball.velX = -0.5;
+            }
+            else if(curKeyPress['d']) {
+                ball.velX = 0.5;
+            }
+            else {
+                ball.velX = 0;
+            }
+        }
+        
+        function loop() {
+            updateKeyStatus();
+            var canvas = document.getElementById("fishbox");
+            var context = canvas.getContext("2d");
+            
+            context.clearRect(0,0, canvas.width, canvas.height);
+            
+            var deltaX = ball.velX
+            var deltaY = ball.velY
+            
+            console.log(curKeyPress)
+            
+            ball.x += deltaX;
+            ball.y += deltaY;
+
+            ball.draw(context);
+
+            balls.forEach(function(b) {
+                console.log("Drawing Ball)");
+                var dir = Math.random() < 0.5 ? -1 : 1;
+                b.x += dir * Math.random() * 0.025
+                b.y += dir * Math.random() * 0.025
+                console.log(b.x)
+                console.log(b.y)
+                b.draw(context)
+            })
+
+            context.font = '50px serif';
+            context.fillText('🍆', 10, 60);
+
+            requestAnimationFrame(loop);
+        }
+        
+    
+        var fishes = []
+        var food = []
+        addFish('./resources/images/fish_1_cropped.png');
+        addFood();
+        addFood();
+        addFood();
+        addFood();
+        addFood();
+        addFood();
+
+        function addFood() {
+            let isSafe = (Math.random() > 0.2)
+            new_food = {
+                x: Math.floor((Math.random() * 500)),
+                y: Math.floor((Math.random() * 500)),
+                color: 'brown',
+                radius: 5,
+                isSafe: isSafe,
+                draw: function() {
+                    context.beginPath();
+                    context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+                    context.closePath();
+                    context.fillStyle = this.color;
+                    context.fill();
+                }
+            }
+            food.push(new_food);
+        }
+
+        function addFish(fishImg) {
+            fish_img = new Image();
+            fish_img.onload = function() {
+                new_fish = {
+                    x: 100,
+                    y: 100,
+                    img: fishImg,
+                    draw: function() {
+                        context.drawImage(fish_img, this.x, this.y);
+                    }
+                }
+                fishes.push(new_fish);
+            };
+            fish_img.onerror = function() {
+                console.log("Error loading fish image");
+            };
+            fish_img.src = fishImg;
+        }
+
+        // Draw Loop (once per frame)
+        // temporarily commenting
+        // function drawStuff() {
+        //     // Clear the canvas
+        //     context.clearRect(0,0, canvas.width, canvas.height);
+
+        //     ball.draw();
+
+        //     for(let i = 0; i < fishes.length; i=i+1)
+        //     {
+        //         fishes[i].draw();
+        //     }
+
+        //     for(let i = 0; i < food.length; i=i+1)
+        //     {
+        //         food[i].draw();
+        //     }
+
+        //     // Get called again the next frame
+        //     window.requestAnimationFrame(drawStuff);
+        // }
+        // Initiate the draw loop
+        // window.requestAnimationFrame(drawStuff);
+
+     
     </script>
 </body>
 

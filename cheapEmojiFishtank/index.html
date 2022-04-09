@@ -65,7 +65,7 @@
         <div id="fishbox">
             <div id="fishboxWater">
                 <template x-for="currFish in fish" x-key="1">
-                    <div class="fish" x-text="currFish.icon" :style="{ transform: 'scale('+currFish.scale+') scaleX('+(currFish.mirrored?'-':'')+'1) rotate('+currFish.angleTurn+'turn)', top: currFish.x*100+'%', left: currFish.y*100+'%' }">
+                    <div class="fish" x-text="currFish.icon" :style="{ transform: 'scale('+currFish.scale+') scaleX('+(currFish.mirrored?'-':'')+'1) rotate('+currFish.angleTurn+'turn)', top: currFish.x+'%', left: currFish.y+'%' }">
                     </div>
                 </template>
             </div>
@@ -75,7 +75,7 @@
     <script src="alpine.3.9.6.min.js" defer></script>
     <script src="lodash.min.js"></script>
     <script src="chance.min.js"></script>
-    <script type="text/javascript" src="voronoi.min.js"></script>
+    <script type="text/javascript" src="voronoijs.min.js"></script>
     <script>
         //fitty('.facecard .name');
     </script>
@@ -97,9 +97,13 @@
                         '🐙',
                         '🐚',
                         '🦐',
+                        '🦞',
+                        '🦀',
                         '🟪',
                         '⭐',
                         '◽',
+                        '🍤',
+                        '🦐',
                     ], [
                         150,
                         75,
@@ -111,14 +115,18 @@
                         3,
                         7,
                         25,
+                        25,
+                        25,
                         1,
                         2,
                         0,
+                        2,
+                        10,
                     ]);
                 },
 
                 async init() {
-                    Array.from(Array(10).keys()).forEach(() => {
+                    Array.from(Array(11).keys()).forEach(() => {
                         let newFish = {
                             x: chance.floating({ min: 0.05, max: 0.95 }),
                             y: chance.floating({ min: 0.05, max: 0.95 }),
@@ -130,6 +138,16 @@
                         newFish.value = this.nextFishId++;
                         this.fish.push(newFish);
                     });
+                    let boundingSquare = [
+                        { x: 0, y: 0 },
+                        { x: 0, y: 100 },
+                        { x: 100, y: 100 },
+                        { x: 100, y: 0 },
+                    ]
+                    let treemap = new voronoi.Treemap({children: this.fish}, voronoi.Polygon.create(100,100,50), 100, 100);
+                    treemap.compute();
+                    console.log(treemap);
+                    this.fish = treemap.sites;
                 }
             }));
         });
