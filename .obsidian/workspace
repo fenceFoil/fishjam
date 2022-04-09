@@ -1,0 +1,94 @@
+{
+  "main": {
+    "id": "3b2f5f3d211e766c",
+    "type": "split",
+    "children": [
+      {
+        "id": "3f7fe4e4666ff9e8",
+        "type": "leaf",
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "kanban.md",
+            "mode": "source"
+          }
+        }
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "d2a8095eaa338c15",
+    "type": "split",
+    "children": [
+      {
+        "id": "3b4a0d1bba3503cc",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d0c380435727293f",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "7a1b19f688a27de6",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "00ff93da4018dd64",
+    "type": "split",
+    "children": [
+      {
+        "id": "938aac6cb6b1aa9a",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "96b1a45aa11a4db2",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "kanban.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "active": "3f7fe4e4666ff9e8",
+  "lastOpenFiles": [
+    "kanban.md",
+    "Untitled.md"
+  ]
+}
