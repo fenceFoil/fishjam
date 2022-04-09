@@ -51,7 +51,6 @@
                     velY: 0,
                     color: colors[Math.floor(Math.random) * colors.length],
                     draw: function(context) {
-                        console.log("Drawing my balls lol XD");
                         context.beginPath();
                         context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
                         context.closePath();
@@ -130,7 +129,6 @@
             ball.draw(context);
 
             balls.forEach(function(b) {
-                console.log("Drawing Ball)");
                 var dir = Math.random() < 0.5 ? -1 : 1;
                 b.x += dir * Math.random() * 0.025
                 b.y += dir * Math.random() * 0.025
