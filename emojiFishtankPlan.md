@@ -1,2 +1,3 @@
-- Generate several fish of different sizes
-- Make the fish eat other fish
+- Generate 11 fish of different sizes and emojis. 2 commons, the rest are rare. Draw from a deck.
+- Make the fish move around
+- X Make the fish eat other fish

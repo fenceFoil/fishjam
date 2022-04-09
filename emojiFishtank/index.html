@@ -24,7 +24,7 @@
             display: grid;
             flex-direction: column;
             place-items: center;
-            font-size: larger;
+            font-size: 
         }
 
         #fishbox {
@@ -43,7 +43,7 @@
             left: 0;
             right: 0;
             text-align: center;
-            content: "it's 9:30 there's fish everywhere";
+            content: "11:11:11 make 11 fish";
         }
 
     </style>
@@ -58,6 +58,7 @@
     </div>
     <script src="fitty.min.js"></script>
     <script src="alpine.3.9.6.min.js" defer></script>
+    <script src="lodash.min.js"></script>
     <script>
         //fitty('.facecard .name');
     </script>
@@ -65,6 +66,13 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('d', () => ({
                 async init() {
+                    fish: [],
+
+                    function init() {
+                        new Array(11).forEach(() => {
+
+                        });
+                    }
                 }
             }));
         });
