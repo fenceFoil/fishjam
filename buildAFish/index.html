@@ -115,6 +115,15 @@
              rotate: 30deg;
          }
      }
+
+     #cateyes {
+         z-index: 15;
+         display: block;
+         position: absolute;
+         width: 60vmin;
+         height: 60vmin;
+         filter: invert() opacity(0.2);
+     }
     </style>
     <script src="phaser.min.js"></script>
     <script type="text/javascript" src="paper-full.min.js"></script>
@@ -130,7 +139,9 @@
         <div id="backdrop"></div>
         <div id="backdropFilter" :style="{opacity: filterStrength}"></div>
         <!-- 🐟 🎣🐠🐡🦈🐳💧🌿🦑🐙 -->
-        <canvas id="fishbox" width="500" height="500" tabindex='0' :style="{filter: 'invert('+currFilter+')'}"></canvas>
+        <img id="cateyes" src="resources/images/smolcat.jpg" :style="{display: showCatEyes?'block':'none'}">
+        <canvas id="fishbox" width="500" height="500" tabindex='0' :style="{filter: 'invert('+currFilter+')'}">
+        </canvas>
         <!--<canvas id="fishbox" width="500" height="500" tabindex='0' :style="{filter: 'invert('+currFilter+')'}"></canvas> -->
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
@@ -141,14 +152,17 @@
     <script src="howler.min.js"></script>
     <script type="text/javascript" src="voronoijs.min.js"></script>
     <script>
-
          document.addEventListener('alpine:init', () => {
              Alpine.data('d', () => ({
                  currFilter: 0,
                  filterStrength: 0,
+                 showCatEyes: false,
 
                  async init() {
                      setInterval(() => {
+                        if(Math.random() < 0.005) {
+                            this.showCatEyes = !this.showCatEyes;
+                        }
                          if (ball.health <= 0) {
                              //this.currFilter = (Math.sin(Date.now()/700)+1)/2;
                              this.filterStrength = 1;
@@ -206,13 +220,13 @@
             spawnEnemyFishBall();
         }
 
-        function spawnEnemyFishBall() {
+        function spawnEnemyFishBall(x, y) {
             let fish_img = new Image();
             fish_img.onload = function() {
                 // NEWBALL
                 new_fish = {
-                    x: Math.floor(Math.random() * 500),
-                    y: Math.floor(Math.random() * 500),
+                    x: x,
+                    y: y,
                     radius: Math.floor(Math.random() * 20 + 5 + (frame / 60 * 2)),
                     angle: 0,
                     velX: 0,
@@ -369,7 +383,14 @@
                 if(Math.random() < 0.005 + (frame / 60 * 0.002)) // Value determined at random
                 // https://chancejs.com/
                 {
-                    spawnEnemyFishBall();
+                    var x = Math.random() * canvas.width;
+                    var y = Math.random() * canvas.height;
+
+                    while (Math.abs(ball.x - x) < 20 && Math.abs(ball.y - y) < 20) {
+                        x = Math.random() * canvas.width;
+                        y = Math.random() * canvas.height;
+                    }
+                    spawnEnemyFishBall(x, y);
                 }
 
                 if(ball.plastic > 0) {
