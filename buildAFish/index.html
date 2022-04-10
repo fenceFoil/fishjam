@@ -12,12 +12,105 @@
     <noscript>Hello Ryan! Behold the fallback fish: 🐟</noscript>
     <link rel="stylesheet" href="main.css">
     <style>
+        
+    body {
+        max-width: 100vw;
+        max-height: 100vh;
+        overflow: hidden;
+    }
+
+    gametitle {
+        font-size: xxx-large;
+    }
+
+    #app {
+        background-color: black;
+        background-image: url(waterbg.jpg);
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        min-height: 100vh;
+        margin: 0;
+        color: ivory;
+        display: grid;
+        flex-direction: column;
+        place-items: center;
+        font-size: 3vmin;
+    }
+            
      #fishbox {
+        position: relative;
+        display: grid;
+        place-content: center;
+        width: 60vmin;
+        height: 60vmin;
+        background-color: blue;
+        border: solid 2px white;
+         transform: rotate(0deg);
+         z-index: 3;
      } 
+     
+    #fishbox::after {
+        position: absolute;
+        bottom: -2em;
+        left: 0;
+        right: 0;
+        text-align: center;
+        content: "🐟";
+        z-index: 5;
+    }
+
+     #backdropFilter {
+         position: absolute;
+         top: 0; bottom: 0; left: 0; right: 0;
+         background-color: green;
+         mix-blend-mode: hard-light;
+         opacity: 0;
+         transition: opacity 10s;
+         z-index: 2;
+     }
+
+     #backdrop {
+        position: absolute;
+        top: 0; bottom: 0; left: 0; right: 0;
+        background-image: url(waterbg.jpg);
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        animation-name: waterWaving;
+        animation-timing-function: linear;
+        animation-duration: 3s;
+        animation-iteration-count: infinite;
+        animation-direction: alternate;
+        z-index: 1;
+     }
+
+     @keyframes waterWaving {
+         from {
+            scale: 1;
+         }
+         to {
+             scale: 1.03;
+         }
+     }
+
+     @keyframes wigglewiggle {
+         from {
+             rotate: -30deg;
+         }
+
+         to {
+             rotate: 30deg;
+         }
+     }
     </style>
 </head>
 <body>
     <div id="app" x-data="d">
+        <audio loop autoplay src="zombo_words.mp3" type="audio/mpeg"></audio>
+        <div id="gametitle">The Journey of David's Fish<div>
+        <div id="backdrop"></div>
+        <div id="backdropFilter" :style="{opacity: filterStrength}"></div>
         <!-- 🐟 🎣🐠🐡🦈🐳💧🌿🦑🐙 -->
         <canvas id="fishbox" width="500" height="500" tabindex='0' :style="{filter: 'invert('+currFilter+')'}"></canvas>
         <!--<canvas id="fishbox" width="500" height="500" tabindex='0' :style="{filter: 'invert('+currFilter+')'}"></canvas> -->
@@ -26,17 +119,25 @@
     <script src="alpine.3.9.6.min.js" defer></script>
     <script src="lodash.min.js"></script>
     <script src="chance.min.js"></script>
+    <script src="chroma.min.js"></script>
+    <script src="howler.min.js"></script>
     <script type="text/javascript" src="voronoijs.min.js"></script>
     <script>
 
          document.addEventListener('alpine:init', () => {
              Alpine.data('d', () => ({
                  currFilter: 0,
+                 filterStrength: 0,
 
                  async init() {
                      setInterval(() => {
-                         //this.currFilter = (Math.sin(Date.now()/10000)+1)/2
-                         console.log(this.currFilter);
+                         if (ball.health <= 0) {
+                             //this.currFilter = (Math.sin(Date.now()/700)+1)/2;
+                             this.filterStrength = 1;
+                         } else {
+                             this.filterStrength = 0;
+                             this.currFilter = 0;
+                         }
                      }, 100);
                  }
              }))
@@ -62,21 +163,24 @@
             y: 20,
             width: 150,
             height: 30,
+            getDeadOffset() {
+                return ((ball.health < 0) || (ball.health > 100))?chance.integer({min:-3, max: 3}):0;
+            },
             draw: function(context) {
                 // Outer Rectangle outline
                 context.save();
                 context.strokeWidth = 3;
-                context.strokeRect(this.x, this.y, this.width, this.height);
+                context.strokeRect(this.x + this.getDeadOffset(), this.y + this.getDeadOffset(), this.width + this.getDeadOffset(), this.height + this.getDeadOffset());
                 context.restore();
 
                 // Inner Rectangle health bar
                 context.save();
                 context.fillStyle = 'red';
-                context.fillRect(this.x+1, this.y+1, (this.width-2) * (ball.health / 100), this.height-2);
+                context.fillRect(this.x+1 + this.getDeadOffset(), this.y+1 + this.getDeadOffset(), (this.width-2) * (ball.health / 100) + this.getDeadOffset(), this.height-2 + this.getDeadOffset());
                 context.restore();
             }
         }
-
+ 
         var colors = ['dodgerblue', 'green', 'yellow', 'black', 'red', 'purple', 'pink']
         var fish_colors = ['fish_brown', 'fish_cyan', 'fish_green', 'fish_red', 'fish_purple', 'fish_black']
 
@@ -87,15 +191,25 @@
         function spawnEnemyFishBall() {
             let fish_img = new Image();
             fish_img.onload = function() {
+                // NEWBALL
                 new_fish = {
                     x: Math.floor(Math.random() * 500),
                     y: Math.floor(Math.random() * 500),
-                    radius: Math.floor(Math.random() * 20),
+                    radius: Math.floor(Math.random() * 20) + 5,
+                    angle: 0,
                     velX: 0,
                     velY: 0,
+                    health: 50,
+                    plastic: 0,
+                    getWidth() {
+                        return this.img.width*(this.radius/20);
+                    },
+                    getHeight() {
+                        return this.img.height*(this.radius/20);
+                    },
                     img: fish_img,
                     draw: function(context) {
-                        context.drawImage(fish_img, this.x, this.y);
+                        context.drawImage(fish_img, this.x, this.y, this.img.width*(this.radius/20), this.img.height*(this.radius/20));
                     }
                 }
                 balls.push(new_fish);
@@ -104,67 +218,40 @@
                 console.log("Error loading fish image");
             };
             fish_img.src = "./resources/images/" + fish_colors[Math.floor(Math.random() * fish_colors.length)] + ".png";
-            /*balls.push(
-                {
-                    x: Math.floor(Math.random() * 500),
-                    y: Math.floor(Math.random() * 500),
-                    radius: Math.floor(Math.random() * 20),
-                    velX: 0,
-                    velY: 0,
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    draw: function(context) {
-                        context.beginPath();
-                        context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
-                        context.closePath();
-                        context.fillStyle = this.color;
-                        context.fill();
-                    }
-                }
-            )*/
         }
         
+        // Make the player
         var ball = {draw: function(){}};
         let fish_img = new Image();
         fish_img.onload = function() {
+            // NEWBALL
             ball = {
-                x: 50,
-                y: 50,
+                x: 250,
+                y: 250,
                 radius: 20,
+                angle: 0,
                 velX: 0,
                 velY: 0,
-                health: 25,
+                health: 100,
                 plastic: 2,
                 img: fish_img,
+                imgBaseSize: 32,
+
+                getWidth() {
+                    return this.img.width*(this.radius/20);
+                },
+                getHeight() {
+                    return this.img.height*(this.radius/20);
+                },
                 draw: function(context) {
-                    context.drawImage(fish_img, this.x, this.y, this.img.width*(this.radius/20), this.img.height*(this.radius/20));
+                    context.drawImage(fish_img, this.x, this.y, this.imgBaseSize*(this.radius/20), this.imgBaseSize*(this.radius/20));
                 }
             }
-            balls.push(new_fish);
         };
         fish_img.onerror = function() {
             console.log("Error loading fish image");
         };
-        fish_img.src = "./resources/images/fish_1_cropped_32_x_32.png";
-        
-        // var ball = {
-        //     x: 50,
-        //     y: 50,
-        //     radius: 20,
-        //     velX: 0,
-        //     velY: 0,
-        //     health: 75,
-        //     plastic: 2,
-        //     color: 'green',
-        //     draw: function(context) {
-        //         //context.beginPath();
-        //         //context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
-        //         //context.closePath();
-        //         //context.fillStyle = this.color;
-        //         //context.fill();
-        //         context.font = this.radius*2+'px serif';
-        //         context.fillText('🦐', this.x, this.y);
-        //     }
-        // }
+        fish_img.src = "./resources/images/fish_1_cropped.png";
         
 
         $(document).on('keydown', function(e) {
@@ -176,6 +263,7 @@
             curKey = String.fromCharCode(e.which)
             curKeyPress[curKey.toLowerCase()] = false;
         })
+
 
         function updateKeyStatus() {
             if(curKeyPress['w']){
@@ -202,27 +290,54 @@
             updateKeyStatus();
             var canvas = document.getElementById("fishbox");
             var context = canvas.getContext("2d");
-            
+
+            if(ball.health > 0) {
+                if (ball.x <= 0) {
+                    ball.x = canvas.width
+                    // ball.getContext().rotate(180)
+                    
+                } else if (ball.x >= canvas.width) {
+                    ball.x = 0
+                    // ball.getContext().rotate(180)
+
+                } 
+
+                if (ball.y <= 0) {
+                    ball.y = canvas.height
+                } else if (ball.y >= canvas.height) {
+                    ball.y = 0
+                }
+
+                
+                var deltaX = ball.velX
+                var deltaY = ball.velY
+                                    
+                ball.x += deltaX;
+                ball.y += deltaY;
+            }
+
             context.clearRect(0,0, canvas.width, canvas.height);
-            
-            var deltaX = ball.velX
-            var deltaY = ball.velY
-            
-            //console.log(curKeyPress)
-            
-            ball.x += deltaX;
-            ball.y += deltaY;
+
+            if(ball.health > 0) {
+                ball.draw(context);
+            }
 
             // Spawn food occasionally
             if(Math.random() < 0.005) // Value determined at random
             // https://chancejs.com/
             {
-                console.log("FOOD");
                 addFood();
             }
 
+            // Spawn fish occasionally
+            if(Math.random() < 0.005) // Value determined at random
+            // https://chancejs.com/
+            {
+                spawnEnemyFishBall();
+            }
+
             if(ball.plastic > 0) {
-                // /60 to make it per second probably
+                // divide by 60 to make it per second probably
                 ball.health -= (ball.plastic * 2) / 60;
 
                 if(Math.random() < 0.0045) {
@@ -239,31 +354,115 @@
 
             for(let i = 0; i < food.length; i++)
             {
+                // Collide with player
                 if (isColliding(food[i], ball)) {
+                    console.log("Collide Food->Player: " + i);
                     if(food[i].isSafe) {
                         ball.health = ball.health + 5;
-                        ball.radius *= 1.2;
+                        ball.radius *= resizingMultiplier(food[i].radius, ball.radius);
                     }
                     else {
                         ball.plastic = ball.plastic + 1;
                     }
-                    foog = food.splice(i, 1);
+                    food.splice(i, 1);
                     i = i - 1;
+                    continue;
                 }
-                else {
+
+                let hit = false;
+                // Collide with bad fish
+                for (let j = 0; j < balls.length; j++) {
+                    if (isColliding(food[i], balls[j])) {
+                        console.log("Collide Food->Ball: " + i + " with " + j);
+                        if(food[i].isSafe) {
+                            balls[j].health = balls[j].health + 5;
+                            balls[j].radius *= resizingMultiplier(food[i].radius, balls[j].radius);
+                        }
+                        else {
+                            balls[j].plastic = balls[j].plastic + 1;
+                        }
+                        food.splice(i, 1);
+                        i = i - 1;
+                        hit = true;
+                        break;
+                    }
+                }
+                
+                if(!hit) {
                     food[i].draw(context)
                 }
             }
             
-            ball.draw(context);
 
             for (let i = 0; i < balls.length; i++) {
 
+                // Collision with player
+                if (isColliding(balls[i], ball)) {
+                    console.log("Collide Ball->Player: " + i);
+                    if(balls[i].radius > ball.radius) {
+                        balls[i].health = balls[i].health + 5;
+                        balls[i].radius *= resizingMultiplier(ball.radius, balls[i].radius);
+                        ball.health = 0;
+                        ball.x = 10000;
+                        ball.y = 10000;
+                    }
+                    else {
+                        ball.health = ball.health + 5;
+                        ball.radius *= resizingMultiplier(balls[i].radius, ball.radius);
+                        balls.splice(i, 1);
+                        i = i - 1;
+                        continue;
+                    }
+                }
+
+                let contMore = false;
+                // Collide with other balls
+                for (let j = i + 1; j < balls.length; j++) {
+                    if (isColliding(balls[i], balls[j])) {
+                        console.log("Collide: " + i + " to " + j);
+                        if(balls[i].radius > balls[j].radius) {
+                            balls[i].health = balls[i].health + 5;
+                            balls[i].radius *= resizingMultiplier(balls[j].radius, balls[i].radius);
+                            //ball.health = 0;
+                            balls.splice(j, 1);
+                            j = j - 1;
+                        }
+                        else {
+                            balls[j].health = balls[j].health + 5;
+                            balls[j].radius *= resizingMultiplier(balls[i].radius, balls[j].radius);
+                            balls.splice(i, 1);
+                            i = i - 1;
+                            contMore = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if(contMore) {
+                    continue;
+                }
+
+                if(balls[i].plastic > 0) {
+                    // divide by 60 to make it per second probably
+                    balls[i].health -= (balls[i].plastic * 2) / 60;
+
+                    if(Math.random() < 0.0045) {
+                        balls[i].plastic = balls[i].plastic - 1;
+                    }
+                }
+                if(balls[i].health < 0) {
+                    balls.splice(i, 1);
+                    i = i - 1;
+                    continue;
+                }
                 var enemyBallNearbyThresh = 200;
                 
                 // throttle below values to test ball movement
                 // must sum to 1
-                var weight_boid = 0.6
+                var weight_boid_cohesion = 0.6
+                var boid_weight_repulsion = 1.6
+                var boid_repulsion_distance = 30
+                var boid_weight_angle = 0
                 var weight_player = getDist(ball, balls[i]) <= enemyBallNearbyThresh ? 1 : 0.4;
 
                 // calculating Boid vector
@@ -280,8 +479,8 @@
                 var averageX = (totalX / (ballsNearby.length == 0 ? 1 : ballsNearby.length))
                 var averageY = (totalY / (ballsNearby.length == 0 ? 1 : ballsNearby.length))
                 
-                var deltaXBoid = averageX * 0.005 * weight_boid
-                var deltaYBoid = averageY * 0.005 * weight_boid
+                var deltaXBoid = averageX * 0.005 * weight_boid_cohesion
+                var deltaYBoid = averageY * 0.005 * weight_boid_cohesion
 
                 // calculating vector to target player ball
                 var deltaXPlayer = ((ball.x - balls[i].x) * 0.005) * weight_player
@@ -319,12 +518,23 @@
         addFood();
         addFood();
 
+        function resizingMultiplier(radiusSmall, radiusLarge) {
+            return 1 + 0.2 * (radiusSmall / radiusLarge)
+        }
+
         function addFood() {
+            // NEWBALL
             new_food = {
                 x: Math.floor((Math.random() * 500)),
                 y: Math.floor((Math.random() * 500)),
                 color: 'brown',
                 radius: 5,
+                getWidth() {
+                        return (this.radius*2);
+                    },
+                    getHeight() {
+                        return this.radius*2;
+                    },
                 isSafe: (Math.random() > 0.4),
                 draw: function(context) {
                     /*context.beginPath();
@@ -356,12 +566,21 @@
         function addFish(fishImg) {
             fish_img = new Image();
             fish_img.onload = function() {
+                // NEWBALL
                 new_fish = {
                     x: 100,
                     y: 100,
+                    radius: 100,
+                    angle: 0,
                     img: fishImg,
                     draw: function() {
                         context.drawImage(fish_img, this.x, this.y);
+                    },
+                    getWidth() {
+                        return this.radius*2;
+                    },
+                    getHeight() {
+                        return this.radius*2;
                     }
                 }
                 fishes.push(new_fish);
@@ -388,9 +607,12 @@
         // Gets the squared distance between two objects
         // A^2 + B^2 = C^2
         function sqrDist(obj1, obj2) {
+            /*let xDiff = (obj1.x + obj1.getWidth()/2) - (obj2.x + obj2.getWidth()/2);
+            let yDiff = (obj1.y + obj1.getHeight()/2) - (obj2.y + obj2.getHeight()/2);*/
             let xDiff = obj1.x - obj2.x;
             let yDiff = obj1.y - obj2.y;
             return (xDiff * xDiff) + (yDiff * yDiff);
+            //return 1000000;
         }
 
         // Draw Loop (once per frame)
