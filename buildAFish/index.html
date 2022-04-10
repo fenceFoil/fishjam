@@ -104,6 +104,7 @@
          }
      }
     </style>
+    <script src="phaser.min.js"></script>
 </head>
 <body>
     <div id="app" x-data="d">
@@ -236,6 +237,7 @@
                 plastic: 2,
                 img: fish_img,
                 imgBaseSize: 32,
+                eated: false,
 
                 getWidth() {
                     return this.img.width*(this.radius/20);
@@ -294,11 +296,11 @@
             if(ball.health > 0) {
                 if (ball.x <= 0) {
                     ball.x = canvas.width
-                    // ball.getContext().rotate(180)
+                    // context.rotate(180)
                     
                 } else if (ball.x >= canvas.width) {
                     ball.x = 0
-                    // ball.getContext().rotate(180)
+                    // context.rotate(180)
 
                 } 
 
@@ -348,7 +350,13 @@
             if(ball.health <= 0) {
                 context.save();
                 context.font = 46+'px serif';
-                context.fillText('The Ocean is DEAD', 20, 275);
+                if(ball.eated) {
+                    context.fillText('    You are EATED', 20, 275);
+                }
+                else {
+                    context.fillText('The Ocean is DEAD', 20, 275);
+
+                }
                 context.restore();
             }
 
@@ -401,13 +409,16 @@
                     console.log("Collide Ball->Player: " + i);
                     if(balls[i].radius > ball.radius) {
                         balls[i].health = balls[i].health + 5;
+                        balls[i].plastic = balls[i].plastic + ball.plastic; 
                         balls[i].radius *= resizingMultiplier(ball.radius, balls[i].radius);
                         ball.health = 0;
                         ball.x = 10000;
                         ball.y = 10000;
+                        ball.eated = true;
                     }
                     else {
                         ball.health = ball.health + 5;
+                        balls.plastic = balls.plastic + balls[i].plastic; 
                         ball.radius *= resizingMultiplier(balls[i].radius, ball.radius);
                         balls.splice(i, 1);
                         i = i - 1;
@@ -422,6 +433,7 @@
                         console.log("Collide: " + i + " to " + j);
                         if(balls[i].radius > balls[j].radius) {
                             balls[i].health = balls[i].health + 5;
+                            balls[i].plastic = balls[i].plastic + balls[j].plastic; 
                             balls[i].radius *= resizingMultiplier(balls[j].radius, balls[i].radius);
                             //ball.health = 0;
                             balls.splice(j, 1);
@@ -429,6 +441,7 @@
                         }
                         else {
                             balls[j].health = balls[j].health + 5;
+                            balls[j].plastic = balls[j].plastic + balls[i].plastic; 
                             balls[j].radius *= resizingMultiplier(balls[i].radius, balls[j].radius);
                             balls.splice(i, 1);
                             i = i - 1;
