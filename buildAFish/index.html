@@ -19,8 +19,9 @@
         overflow: hidden;
     }
 
-    gametitle {
+    #gametitle {
         font-size: xxx-large;
+        z-index: 50;
     }
 
     #app {
@@ -196,7 +197,7 @@
                 new_fish = {
                     x: Math.floor(Math.random() * 500),
                     y: Math.floor(Math.random() * 500),
-                    radius: Math.floor(Math.random() * 20) + 5,
+                    radius: Math.floor(Math.random() * 20 + 5 + (frame / 60 * 2)),
                     angle: 0,
                     velX: 0,
                     velY: 0,
@@ -211,6 +212,11 @@
                     img: fish_img,
                     draw: function(context) {
                         context.drawImage(fish_img, this.x, this.y, this.img.width*(this.radius/20), this.img.height*(this.radius/20));
+                    },
+                    rotate: function(context, angle) {
+                        context.rotate(angle);
+                        context.setTransform(1, 0, 0, 1, 0, 0);
+
                     }
                 }
                 balls.push(new_fish);
@@ -247,6 +253,13 @@
                 },
                 draw: function(context) {
                     context.drawImage(fish_img, this.x, this.y, this.imgBaseSize*(this.radius/20), this.imgBaseSize*(this.radius/20));
+                },
+                rotate: function(context, angle) {
+                    context.save()
+                    context.translate(this.x + (this.getWidth() / 2), this.y + (this.getHeight() / 2))
+                    context.rotate(angle)
+                    context.drawImage(fish_img, -this.img.width / 2, -this.img.height / 2)
+                    context.restore()
                 }
             }
         };
@@ -258,12 +271,22 @@
 
         $(document).on('keydown', function(e) {
             curKey = String.fromCharCode(e.which)
-            curKeyPress[curKey.toLowerCase()] = true;
+            if(e.which == 27) {
+                curKeyPress['escape'] = true;
+            }
+            else {
+                curKeyPress[curKey.toLowerCase()] = true;
+            }
         })
 
         $(document).on("keyup", function(e) {
             curKey = String.fromCharCode(e.which)
-            curKeyPress[curKey.toLowerCase()] = false;
+            if(e.which == 27) {
+                curKeyPress['escape'] = false;
+            }
+            else {
+                curKeyPress[curKey.toLowerCase()] = false;
+            }
         })
 
 
@@ -286,9 +309,14 @@
             else {
                 ball.velX = 0;
             }
+            if(curKeyPress['escape']){
+                window.location.reload();
+            }
         }
         
+        var frame = 0;
         function loop() {
+            frame = frame + 1;
             updateKeyStatus();
             var canvas = document.getElementById("fishbox");
             var context = canvas.getContext("2d");
@@ -296,226 +324,235 @@
             if(ball.health > 0) {
                 if (ball.x <= 0) {
                     ball.x = canvas.width
-                    // context.rotate(180)
+                    ball.rotate(context, 90 * Math.PI / 180)
                     
                 } else if (ball.x >= canvas.width) {
                     ball.x = 0
-                    // context.rotate(180)
+                    ball.rotate(context, 90 * Math.PI / 180)
 
                 } 
 
                 if (ball.y <= 0) {
                     ball.y = canvas.height
+                    ball.rotate(context, 90 * Math.PI / 180)
+
                 } else if (ball.y >= canvas.height) {
                     ball.y = 0
+                    ball.rotate(context, 90 * Math.PI / 180)
+
                 }
 
-                
                 var deltaX = ball.velX
                 var deltaY = ball.velY
                                     
                 ball.x += deltaX;
                 ball.y += deltaY;
-            }
+            
 
-            context.clearRect(0,0, canvas.width, canvas.height);
+                context.clearRect(0,0, canvas.width, canvas.height);
 
-            if(ball.health > 0) {
-                ball.draw(context);
-            }
-
-            // Spawn food occasionally
-            if(Math.random() < 0.005) // Value determined at random
-            // https://chancejs.com/
-            {
-                addFood();
-            }
-
-            // Spawn fish occasionally
-            if(Math.random() < 0.005) // Value determined at random
-            // https://chancejs.com/
-            {
-                spawnEnemyFishBall();
-            }
-
-            if(ball.plastic > 0) {
-                // divide by 60 to make it per second probably
-                ball.health -= (ball.plastic * 2) / 60;
-
-                if(Math.random() < 0.0045) {
-                    ball.plastic = ball.plastic - 1;
+                if(ball.health > 0) {
+                    ball.draw(context);
                 }
-            }
 
-            if(ball.health <= 0) {
-                context.save();
-                context.font = 46+'px serif';
-                if(ball.eated) {
-                    context.fillText('    You are EATED', 20, 275);
+                // Spawn food occasionally
+                if(Math.random() < 0.005 + (frame / 60 * 0.002)) // Value determined at random
+                // https://chancejs.com/
+                {
+                    addFood();
                 }
-                else {
-                    context.fillText('The Ocean is DEAD', 20, 275);
 
+                // Spawn fish occasionally
+                if(Math.random() < 0.005 + (frame / 60 * 0.002)) // Value determined at random
+                // https://chancejs.com/
+                {
+                    spawnEnemyFishBall();
                 }
-                context.restore();
-            }
 
-            for(let i = 0; i < food.length; i++)
-            {
-                // Collide with player
-                if (isColliding(food[i], ball)) {
-                    console.log("Collide Food->Player: " + i);
-                    if(food[i].isSafe) {
-                        ball.health = ball.health + 5;
-                        ball.radius *= resizingMultiplier(food[i].radius, ball.radius);
+                if(ball.plastic > 0) {
+                    // divide by 60 to make it per second probably
+                    ball.health -= (ball.plastic * 2) / 60;
+
+                    if(Math.random() < 0.0045) {
+                        ball.plastic = ball.plastic - 1;
                     }
-                    else {
-                        ball.plastic = ball.plastic + 1;
-                    }
-                    food.splice(i, 1);
-                    i = i - 1;
-                    continue;
                 }
 
-                let hit = false;
-                // Collide with bad fish
-                for (let j = 0; j < balls.length; j++) {
-                    if (isColliding(food[i], balls[j])) {
-                        console.log("Collide Food->Ball: " + i + " with " + j);
+                for(let i = 0; i < food.length; i++)
+                {
+                    // Collide with player
+                    if (isColliding(food[i], ball)) {
+                        console.log("Collide Food->Player: " + i);
                         if(food[i].isSafe) {
-                            balls[j].health = balls[j].health + 5;
-                            balls[j].radius *= resizingMultiplier(food[i].radius, balls[j].radius);
+                            ball.health = ball.health + 5;
+                            ball.radius *= resizingMultiplier(food[i].radius, ball.radius);
                         }
                         else {
-                            balls[j].plastic = balls[j].plastic + 1;
+                            ball.plastic = ball.plastic + 1;
                         }
                         food.splice(i, 1);
                         i = i - 1;
-                        hit = true;
-                        break;
+                        continue;
+                    }
+
+                    let hit = false;
+                    // Collide with bad fish
+                    for (let j = 0; j < balls.length; j++) {
+                        if (isColliding(food[i], balls[j])) {
+                            console.log("Collide Food->Ball: " + i + " with " + j);
+                            if(food[i].isSafe) {
+                                balls[j].health = balls[j].health + 5;
+                                balls[j].radius *= resizingMultiplier(food[i].radius, balls[j].radius);
+                            }
+                            else {
+                                balls[j].plastic = balls[j].plastic + 1;
+                            }
+                            food.splice(i, 1);
+                            i = i - 1;
+                            hit = true;
+                            break;
+                        }
+                    }
+                    
+                    if(!hit) {
+                        food[i].draw(context)
                     }
                 }
                 
-                if(!hit) {
-                    food[i].draw(context)
-                }
-            }
-            
 
-            for (let i = 0; i < balls.length; i++) {
+                for (let i = 0; i < balls.length; i++) {
 
-                // Collision with player
-                if (isColliding(balls[i], ball)) {
-                    console.log("Collide Ball->Player: " + i);
-                    if(balls[i].radius > ball.radius) {
-                        balls[i].health = balls[i].health + 5;
-                        balls[i].plastic = balls[i].plastic + ball.plastic; 
-                        balls[i].radius *= resizingMultiplier(ball.radius, balls[i].radius);
-                        ball.health = 0;
-                        ball.x = 10000;
-                        ball.y = 10000;
-                        ball.eated = true;
+                    // Collision with player
+                    if (isColliding(balls[i], ball)) {
+                        console.log("Collide Ball->Player: " + i);
+                        if(balls[i].radius > ball.radius) {
+                            balls[i].health = balls[i].health + 5;
+                            balls[i].plastic = balls[i].plastic + ball.plastic; 
+                            balls[i].radius *= resizingMultiplier(ball.radius, balls[i].radius);
+                            ball.health = 0;
+                            ball.x = 10000;
+                            ball.y = 10000;
+                            ball.eated = true;
+                        }
+                        else {
+                            ball.health = ball.health + 5;
+                            balls.plastic = balls.plastic + balls[i].plastic; 
+                            ball.radius *= resizingMultiplier(balls[i].radius, ball.radius);
+                            balls.splice(i, 1);
+                            i = i - 1;
+                            continue;
+                        }
                     }
-                    else {
-                        ball.health = ball.health + 5;
-                        balls.plastic = balls.plastic + balls[i].plastic; 
-                        ball.radius *= resizingMultiplier(balls[i].radius, ball.radius);
+
+                    let contMore = false;
+                    // Collide with other balls
+                    for (let j = i + 1; j < balls.length; j++) {
+                        if (isColliding(balls[i], balls[j])) {
+                            console.log("Collide: " + i + " to " + j);
+                            if(balls[i].radius > balls[j].radius) {
+                                balls[i].health = balls[i].health + 5;
+                                balls[i].plastic = balls[i].plastic + balls[j].plastic; 
+                                balls[i].radius *= resizingMultiplier(balls[j].radius, balls[i].radius);
+                                //ball.health = 0;
+                                balls.splice(j, 1);
+                                j = j - 1;
+                            }
+                            else {
+                                balls[j].health = balls[j].health + 5;
+                                balls[j].plastic = balls[j].plastic + balls[i].plastic; 
+                                balls[j].radius *= resizingMultiplier(balls[i].radius, balls[j].radius);
+                                balls.splice(i, 1);
+                                i = i - 1;
+                                contMore = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if(contMore) {
+                        continue;
+                    }
+
+                    if(balls[i].plastic > 0) {
+                        // divide by 60 to make it per second probably
+                        balls[i].health -= (balls[i].plastic * 2) / 60;
+
+                        if(Math.random() < 0.0045) {
+                            balls[i].plastic = balls[i].plastic - 1;
+                        }
+                    }
+                    if(balls[i].health < 0) {
                         balls.splice(i, 1);
                         i = i - 1;
                         continue;
                     }
-                }
+                    var enemyBallNearbyThresh = 200;
+                    
+                    // throttle below values to test ball movement
+                    // must sum to 1
+                    var weight_boid_cohesion = 0.6
+                    var boid_weight_repulsion = 1.6
+                    var boid_repulsion_distance = 30
+                    var boid_weight_angle = 0
+                    var weight_player = getDist(ball, balls[i]) <= enemyBallNearbyThresh ? 1 : 0.4;
 
-                let contMore = false;
-                // Collide with other balls
-                for (let j = i + 1; j < balls.length; j++) {
-                    if (isColliding(balls[i], balls[j])) {
-                        console.log("Collide: " + i + " to " + j);
-                        if(balls[i].radius > balls[j].radius) {
-                            balls[i].health = balls[i].health + 5;
-                            balls[i].plastic = balls[i].plastic + balls[j].plastic; 
-                            balls[i].radius *= resizingMultiplier(balls[j].radius, balls[i].radius);
-                            //ball.health = 0;
-                            balls.splice(j, 1);
-                            j = j - 1;
-                        }
-                        else {
-                            balls[j].health = balls[j].health + 5;
-                            balls[j].plastic = balls[j].plastic + balls[i].plastic; 
-                            balls[j].radius *= resizingMultiplier(balls[i].radius, balls[j].radius);
-                            balls.splice(i, 1);
-                            i = i - 1;
-                            contMore = true;
-                            break;
-                        }
+                    // calculating Boid vector
+                    var ballsNearby = getBallsWithinThreshDist(ball, balls, i, 150)
+
+                    var totalX = 0
+                    var totalY = 0
+
+                    for (let j = 0; j < ballsNearby.length; j++) {
+                        totalX += ballsNearby[j].x
+                        totalY += ballsNearby[j].y
                     }
-                }
-                
-                if(contMore) {
-                    continue;
-                }
 
-                if(balls[i].plastic > 0) {
-                    // divide by 60 to make it per second probably
-                    balls[i].health -= (balls[i].plastic * 2) / 60;
+                    var averageX = (totalX / (ballsNearby.length == 0 ? 1 : ballsNearby.length))
+                    var averageY = (totalY / (ballsNearby.length == 0 ? 1 : ballsNearby.length))
+                    
+                    var deltaXBoid = averageX * 0.005 * weight_boid_cohesion
+                    var deltaYBoid = averageY * 0.005 * weight_boid_cohesion
 
-                    if(Math.random() < 0.0045) {
-                        balls[i].plastic = balls[i].plastic - 1;
+                    // calculating vector to target player ball
+                    var deltaXPlayer = ((ball.x - balls[i].x) * 0.005) * weight_player
+                    var deltaYPlayer = ((ball.y - balls[i].y) * 0.005) * weight_player
+                    
+                    var deltaX = deltaXBoid + deltaXPlayer
+                    var deltaY = deltaYBoid + deltaYPlayer
+                    
+                    if (balls[i].x < 0 || balls[i].x > canvas.width || balls[i].y < 0 || balls[i].y > canvas.height) {
+                        balls[i].velX = balls[i].velX * -1
+                        balls[i].velY = balls[i].velY * -1
+                        balls[i].x += balls[i].velX
+                        balls[i].y += balls[i].velY
+                    } else {
+                        balls[i].x += deltaX
+                        balls[i].y += deltaY
                     }
-                }
-                if(balls[i].health < 0) {
-                    balls.splice(i, 1);
-                    i = i - 1;
-                    continue;
-                }
-                var enemyBallNearbyThresh = 200;
-                
-                // throttle below values to test ball movement
-                // must sum to 1
-                var weight_boid_cohesion = 0.6
-                var boid_weight_repulsion = 1.6
-                var boid_repulsion_distance = 30
-                var boid_weight_angle = 0
-                var weight_player = getDist(ball, balls[i]) <= enemyBallNearbyThresh ? 1 : 0.4;
+                    balls[i].draw(context)
 
-                // calculating Boid vector
-                var ballsNearby = getBallsWithinThreshDist(ball, balls, i, 150)
-
-                var totalX = 0
-                var totalY = 0
-
-                for (let j = 0; j < ballsNearby.length; j++) {
-                    totalX += ballsNearby[j].x
-                    totalY += ballsNearby[j].y
                 }
 
-                var averageX = (totalX / (ballsNearby.length == 0 ? 1 : ballsNearby.length))
-                var averageY = (totalY / (ballsNearby.length == 0 ? 1 : ballsNearby.length))
-                
-                var deltaXBoid = averageX * 0.005 * weight_boid_cohesion
-                var deltaYBoid = averageY * 0.005 * weight_boid_cohesion
-
-                // calculating vector to target player ball
-                var deltaXPlayer = ((ball.x - balls[i].x) * 0.005) * weight_player
-                var deltaYPlayer = ((ball.y - balls[i].y) * 0.005) * weight_player
-                
-                var deltaX = deltaXBoid + deltaXPlayer
-                var deltaY = deltaYBoid + deltaYPlayer
-                
-                if (balls[i].x < 0 || balls[i].x > canvas.width || balls[i].y < 0 || balls[i].y > canvas.height) {
-                    balls[i].velX = balls[i].velX * -1
-                    balls[i].velY = balls[i].velY * -1
-                    balls[i].x += balls[i].velX
-                    balls[i].y += balls[i].velY
-                } else {
-                    balls[i].x += deltaX
-                    balls[i].y += deltaY
+                healthBar.draw(context);
+            }
+            else {
+                context.clearRect(0,0, canvas.width, canvas.height);
+                if(ball.health <= 0) {
+                    context.save();
+                    context.font = 46+'px serif';
+                    if(ball.eated) {
+                        context.fillText('    You are EATED', 20, 275);
+                    }
+                    else {
+                        context.fillText('The Ocean is DEAD', 20, 275);
+                    }
+                    context.font = 23+'px serif';
+                    context.fillText('Press ESCAPE to run', 20, 400);
+                    context.restore();
                 }
-                balls[i].draw(context)
-
+                
             }
 
-            healthBar.draw(context);
 
             requestAnimationFrame(loop);
         }
@@ -548,7 +585,7 @@
                     getHeight() {
                         return this.radius*2;
                     },
-                isSafe: (Math.random() > 0.4),
+                isSafe: (Math.random() > 0.4 + (frame / 60 * 0.01)),
                 draw: function(context) {
                     /*context.beginPath();
                     context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
