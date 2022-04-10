@@ -137,9 +137,16 @@
                 b.draw(context)
             })
 
-            food.forEach(function(f) {
-                f.draw(context)
-            })
+            for(let i = 0; i < food.length; i++)
+            {
+                if (isColliding(f, ball)) {
+                    foog = food.splice(i, 1);
+                    i = i - 1;
+                }
+                else {
+                    f.draw(context)
+                }
+            }
 
             context.font = '50px serif';
             context.fillText('🍆', 10, 60);
@@ -159,13 +166,12 @@
         addFood();
 
         function addFood() {
-            let isSafe = (Math.random() > 0.2)
             new_food = {
                 x: Math.floor((Math.random() * 500)),
                 y: Math.floor((Math.random() * 500)),
                 color: 'brown',
                 radius: 5,
-                isSafe: isSafe,
+                isSafe: (Math.random() > 0.2),
                 draw: function(context) {
                     context.beginPath();
                     context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
@@ -194,6 +200,27 @@
                 console.log("Error loading fish image");
             };
             fish_img.src = fishImg;
+        }
+
+        // Assumes everything is a circle with a radius attribute and x/y coordinates
+        function isColliding(obj1, obj2) {
+            let sqrDistance = sqrDist(obj1, obj2);
+            let combinedRadius = obj1.radius + obj2.radius;
+            // A^2 + B^2 = C^2
+            // Get the square distance between two objects (C^2)
+            // Then see if it's larger than the combined object radiuses squared
+            if(sqrDistance < (combinedRadius * combinedRadius)) {
+                return true;
+            }
+            return false;
+        }
+
+        // Gets the squared distance between two objects
+        // A^2 + B^2 = C^2
+        function sqrDist(obj1, obj2) {
+            let xDiff = obj1.x - obj2.x;
+            let yDiff = obj1.y - obj2.y;
+            return (xDiff * xDiff) + (yDiff * yDiff);
         }
 
         // Draw Loop (once per frame)
