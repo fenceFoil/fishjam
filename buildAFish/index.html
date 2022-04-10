@@ -37,6 +37,7 @@
         flex-direction: column;
         place-items: center;
         font-size: 3vmin;
+        /*filter: hue-rotate(0.25turn); */
     }
             
      #fishbox {
@@ -50,10 +51,20 @@
          transform: rotate(0deg);
          z-index: 3;
      } 
+
+     #fishbox::before {
+         position: absolute;
+         top: -2em;
+         left: 0;
+         right: 0;
+         text-align: left;
+        content: "The Journey of David's Fish";
+        z-index: 5;
+     }
      
     #fishbox::after {
         position: absolute;
-        bottom: -2em;
+        bottom: 2em;
         left: 0;
         right: 0;
         text-align: center;
@@ -106,11 +117,16 @@
      }
     </style>
     <script src="phaser.min.js"></script>
+    <script type="text/javascript" src="paper-full.min.js"></script>
 </head>
 <body>
     <div id="app" x-data="d">
-        <audio loop autoplay src="zombo_words.mp3" type="audio/mpeg"></audio>
-        <div id="gametitle">The Journey of David's Fish<div>
+        <audio id="audio" autoplay loop>
+            <source src="resources/audio/audio.wav" type="audio/wav" />
+        </audio>      
+        <audio id="audio2" autoplay loop>
+            <source src="resources/audio/audio2.wav" type="audio/wav" />
+        </audio>   
         <div id="backdrop"></div>
         <div id="backdropFilter" :style="{opacity: filterStrength}"></div>
         <!-- 🐟 🎣🐠🐡🦈🐳💧🌿🦑🐙 -->
@@ -144,7 +160,8 @@
                  }
              }))
          });
-        
+         var midi = null;  // global MIDIAccess object
+
         $(document).ready(function() {
             var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
             window.requestAnimationFrame = requestAnimationFrame;
@@ -154,7 +171,6 @@
             loop();
         })
         
-
         var curKeyPress = {};
 
         var balls = []
@@ -230,6 +246,10 @@
         // Make the player
         var ball = {draw: function(){}};
         let fish_img = new Image();
+        fish_img.onerror = function() {
+            console.log("Error loading fish image");
+        };
+        fish_img.src = "./resources/images/fish_1_cropped.png";
         fish_img.onload = function() {
             // NEWBALL
             ball = {
@@ -253,20 +273,10 @@
                 },
                 draw: function(context) {
                     context.drawImage(fish_img, this.x, this.y, this.imgBaseSize*(this.radius/20), this.imgBaseSize*(this.radius/20));
-                },
-                rotate: function(context, angle) {
-                    context.save()
-                    context.translate(this.x + (this.getWidth() / 2), this.y + (this.getHeight() / 2))
-                    context.rotate(angle)
-                    context.drawImage(fish_img, -this.img.width / 2, -this.img.height / 2)
-                    context.restore()
                 }
             }
         };
-        fish_img.onerror = function() {
-            console.log("Error loading fish image");
-        };
-        fish_img.src = "./resources/images/fish_1_cropped.png";
+        
         
 
         $(document).on('keydown', function(e) {
@@ -315,6 +325,7 @@
         }
         
         var frame = 0;
+        var playingAudio = false;
         function loop() {
             frame = frame + 1;
             updateKeyStatus();
@@ -323,25 +334,17 @@
 
             if(ball.health > 0) {
                 if (ball.x <= 0) {
-                    ball.x = canvas.width
-                    ball.rotate(context, 90 * Math.PI / 180)
-                    
+                    ball.x = canvas.width                    
                 } else if (ball.x >= canvas.width) {
                     ball.x = 0
-                    ball.rotate(context, 90 * Math.PI / 180)
-
                 } 
 
                 if (ball.y <= 0) {
                     ball.y = canvas.height
-                    ball.rotate(context, 90 * Math.PI / 180)
-
                 } else if (ball.y >= canvas.height) {
                     ball.y = 0
-                    ball.rotate(context, 90 * Math.PI / 180)
-
                 }
-
+            
                 var deltaX = ball.velX
                 var deltaY = ball.velY
                                     
@@ -425,7 +428,7 @@
                     // Collision with player
                     if (isColliding(balls[i], ball)) {
                         console.log("Collide Ball->Player: " + i);
-                        if(balls[i].radius > ball.radius) {
+                        if(balls[i].radius > ball.radius * 1.1) {
                             balls[i].health = balls[i].health + 5;
                             balls[i].plastic = balls[i].plastic + ball.plastic; 
                             balls[i].radius *= resizingMultiplier(ball.radius, balls[i].radius);
@@ -542,9 +545,19 @@
                     context.font = 46+'px serif';
                     if(ball.eated) {
                         context.fillText('    You are EATED', 20, 275);
+                        if(!playingAudio) {
+                            var audio = new Audio("./resources/audio/audio3.wav");
+                            audio.play();
+                            playingAudio = true;
+                        }
                     }
                     else {
                         context.fillText('The Ocean is DEAD', 20, 275);
+                        if(!playingAudio) {
+                            var audio = new Audio("./resources/audio/audio4.wav");
+                            audio.play();
+                            playingAudio = true;
+                        }
                     }
                     context.font = 23+'px serif';
                     context.fillText('Press ESCAPE to run', 20, 400);
