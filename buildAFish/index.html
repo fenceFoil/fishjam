@@ -12,17 +12,34 @@
     <noscript>Hello Ryan! Behold the fallback fish: 🐟</noscript>
     <link rel="stylesheet" href="styles/main.css">
     <style>
-        
+     #fishbox {
+     } 
     </style>
 </head>
 <body>
     <div id="app">
         <!-- 🐟 🎣🐠🐡🦈🐳💧🌿🦑🐙 -->
         <canvas id="fishbox" width="500" height="500" tabindex='0'></canvas>
+        <!--<canvas id="fishbox" width="500" height="500" tabindex='0' :style="{filter: 'invert('+currFilter+')'}"></canvas> -->
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
+    <script src="alpine.3.9.6.min.js" defer></script>
+    <script src="lodash.min.js"></script>
+    <script src="chance.min.js"></script>
+    <script type="text/javascript" src="voronoijs.min.js"></script>
     <script>
+
+         document.addEventListener('alpine:init', () => {
+             Alpine.data('d', () => ({
+        //         currFilter: 0,
+
+        //         init() {
+        //             setInterval(() => {
+        //                 this.currFilter = (Math.sin(Date.now()/10)+1)/2
+        //             }, 100);
+        //         }
+             }))
+         });
         
         $(document).ready(function() {
             var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
@@ -39,14 +56,34 @@
         var balls = []
         var numBalls = 10
 
-        var colors = ['blue', 'green', 'yellow', 'black', 'red', 'purple', 'pink']
+        var healthBar = {
+            x: 20,
+            y: 20,
+            width: 150,
+            height: 30,
+            draw: function(context) {
+                // Outer Rectangle outline
+                context.save();
+                context.strokeWidth = 3;
+                context.strokeRect(this.x, this.y, this.width, this.height);
+                context.restore();
+
+                // Inner Rectangle health bar
+                context.save();
+                context.fillStyle = 'red';
+                context.fillRect(this.x+1, this.y+1, (this.width-2) * (ball.health / 100), this.height-2);
+                context.restore();
+            }
+        }
+
+        var colors = ['dodgerblue', 'green', 'yellow', 'black', 'red', 'purple', 'pink']
 
         for(let i = 0; i < numBalls; i=1+i) {
             balls.push(
                 {
                     x: Math.floor(Math.random() * 500),
                     y: Math.floor(Math.random() * 500),
-                    radius: Math.floor(Math.random() * 100),
+                    radius: Math.floor(Math.random() * 20),
                     velX: 0,
                     velY: 0,
                     color: colors[Math.floor(Math.random() * colors.length)],
@@ -69,6 +106,8 @@
             radius: 20,
             velX: 0,
             velY: 0,
+            health: 75,
+            plastic: 2,
             color: 'green',
             draw: function(context) {
                 context.beginPath();
@@ -92,19 +131,19 @@
 
         function updateKeyStatus() {
             if(curKeyPress['w']){
-                ball.velY = -0.5;
+                ball.velY = -0.8;
             }
             else if(curKeyPress['s']) {
-                ball.velY = 0.5;
+                ball.velY = 0.8;
             }
             else {
                 ball.velY = 0;
             }
             if(curKeyPress['a']) {
-                ball.velX = -0.5;
+                ball.velX = -0.8;
             }
             else if(curKeyPress['d']) {
-                ball.velX = 0.5;
+                ball.velX = 0.8;
             }
             else {
                 ball.velX = 0;
@@ -126,30 +165,63 @@
             ball.x += deltaX;
             ball.y += deltaY;
 
-            ball.draw(context);
+            if(ball.plastic > 0) {
+                // /60 to make it per second probably
+                ball.health -= (ball.plastic * 2) / 60;
 
-            balls.forEach(function(b) {
-                var dir = Math.random() < 0.5 ? -1 : 1;
-                b.x += dir * Math.random() * 0.025
-                b.y += dir * Math.random() * 0.025
-                //console.log(b.x)
-                //console.log(b.y)
-                b.draw(context)
-            })
+                if(Math.random() < 0.0045) {
+                    ball.plastic = ball.plastic - 1;
+                }
+            }
 
             for(let i = 0; i < food.length; i++)
             {
-                if (isColliding(f, ball)) {
+                if (isColliding(food[i], ball)) {
+                    if(food[i].isSafe) {
+                        ball.health = ball.health + 5;
+                    }
+                    else {
+                        ball.plastic = ball.plastic + 1;
+                    }
                     foog = food.splice(i, 1);
                     i = i - 1;
                 }
                 else {
-                    f.draw(context)
+                    food[i].draw(context)
                 }
             }
 
             context.font = '50px serif';
-            context.fillText('🍆', 10, 60);
+            context.fillText('🦐', 60, 60);
+
+            ball.draw(context);
+
+            for (let i = 0; i < balls.length; i++) {
+
+                var thresh = 100
+                
+                var ballsWithinThresh = []
+                for (let j = i + 1; j < balls.length; j++) {
+                    if (getDist(balls[i], balls[j]) <= thresh) {
+                        ballsWithinThresh.push(balls[j])
+                    }
+                }
+
+                var averagePoint = []
+                
+
+                var dir = Math.random() < 0.25 ? -1 : 1;
+
+                var deltaX = (ball.x - balls[i].x) * 0.0025
+                var deltaY = (ball.y - balls[i].y) * 0.0025
+
+            
+                balls[i].x += deltaX
+                balls[i].y += deltaY
+                balls[i].draw(context)
+            }
+
+            healthBar.draw(context);
 
             requestAnimationFrame(loop);
         }
@@ -171,7 +243,7 @@
                 y: Math.floor((Math.random() * 500)),
                 color: 'brown',
                 radius: 5,
-                isSafe: (Math.random() > 0.2),
+                isSafe: (Math.random() > 0.5),
                 draw: function(context) {
                     context.beginPath();
                     context.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
@@ -181,6 +253,24 @@
                 }
             }
             food.push(new_food);
+        }
+
+        function getVector(org, dest) {
+            return [[dest.x - org.x], [dest.y - org.y]]
+        }
+
+        function getDist(b1, b2) {
+            return Math.sqrt(Math.pow(b1.x - b2.x, 2) + Math.pow(b1.y - b2.y, 2))
+        }
+
+        function getBallsWithinThresh(org, balls, thresh) {
+            var ret = []
+            for (var i = 0; i < balls.length; i++) {
+                if (getDist(org, balls[i]) <= thresh) {
+                    ret.push(balls[i])
+                }
+            }
+            return ret
         }
 
         function addFish(fishImg) {
